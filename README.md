@@ -78,6 +78,7 @@ Inline always open version
 | bootstrapStyling      | Boolean      | false       | Output bootstrap styling classes         |
 | disabled-picker       | Boolean      | false       | If true, disable Datepicker on screen    |
 | required              | Boolean      | false       | Sets html required attribute on input    | 
+| allow-input           | Boolean      | false       | Allow keyboard input of standard date formats |
 
 ## Events
 
