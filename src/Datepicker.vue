@@ -1,13 +1,13 @@
 <template>
   <div class="vdp-datepicker" :class="wrapperClass">
     <div :class="{'input-group' : bootstrapStyling}">
-      <span class="vdp-datepicker__calendar-button" :class="{'input-group-addon' : bootstrapStyling}" v-if="calendarButton" @click="showCalendar()"><i :class="calendarButtonIcon"><span v-if="calendarButtonIcon.length === 0">&hellip;</span></i></span>
+      <span class="vdp-datepicker__calendar-button" :class="{'input-group-addon' : bootstrapStyling}" v-if="calendarButton" @click="showCalendar"><i :class="calendarButtonIcon"><span v-if="calendarButtonIcon.length === 0">&hellip;</span></i></span>
       <input
         :type="inline ? 'hidden' : 'text'"
         :class="[ inputClass, { 'form-control' : bootstrapStyling } ]"
         :name="name"
         :id="id"
-        @click="showCalendar()"
+        @click="showCalendar"
         @keyup="updateDate"
         :value="formattedValue"
         :placeholder="placeholder"
@@ -17,6 +17,7 @@
         :readonly="allowInput ? null : 'readonly'">
       <span class="vdp-datepicker__clear-button" :class="{'input-group-addon' : bootstrapStyling}" v-if="clearButton && selectedDate" @click="clearDate()"><i :class="clearButtonIcon"><span v-if="calendarButtonIcon.length === 0">&times;</span></i></span>
     </div>
+
         <!-- Day View -->
         <div class="vdp-datepicker__calendar" v-show="showDayView" v-bind:style="calendarStyle">
             <header>
@@ -75,7 +76,6 @@
                 v-bind:class="{ 'selected': year.isSelected, 'disabled': year.isDisabled }"
                 @click.stop="selectYear(year)">{{ year.year }}</span>
         </div>
-
   </div>
 </template>
 
@@ -149,6 +149,10 @@ export default {
     bootstrapStyling: {
       type: Boolean,
       default: false
+    },
+    initialView: {
+      type: String,
+      default: 'day'
     },
     disabledPicker: {
       type: Boolean,
@@ -283,51 +287,76 @@ export default {
     calendarStyle () {
       let styles = {}
 
-      if (this.isInline()) {
+      if (this.isInline) {
         styles.position = 'static'
       }
 
       return styles
-    }
-  },
-  methods: {
-    close () {
-      this.showDayView = this.showMonthView = this.showYearView = false
-      this.$emit('closed')
-    },
-    getDefaultDate () {
-      return new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime()
-    },
-    resetDefaultDate () {
-      this.currDate = (this.selectedDate === null) ? this.getDefaultDate() : this.selectedDate.getTime()
     },
     isOpen () {
       return this.showDayView || this.showMonthView || this.showYearView
     },
     isInline () {
       return typeof this.inline !== 'undefined' && this.inline
+    }
+  },
+  methods: {
+    /**
+     * Close all calendar layers
+     */
+    close () {
+      this.showDayView = this.showMonthView = this.showYearView = false
+      this.$emit('closed')
+      document.removeEventListener('click', this.clickOutside, false)
     },
+    getDefaultDate () {
+      return new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime()
+    },
+    resetDefaultDate () {
+      if (this.selectedDate === null) {
+        this.currDate = this.getDefaultDate()
+        return
+      }
+      this.currDate = this.currDate = new Date(this.selectedDate.getFullYear(), this.selectedDate.getMonth(), 1).getTime()
+    },
+    /**
+     * Effectively a toggle to show/hide the calendar
+     * @return {[type]} [description]
+     */
     showCalendar () {
-      if (this.isInline()) {
+      if (this.isInline) {
         return false
       }
-      if (this.isOpen()) {
+      if (this.isOpen) {
         return this.close()
       }
-      this.showDayCalendar()
+      switch (this.initialView) {
+        case 'year':
+          this.showYearCalendar()
+          break
+        case 'month':
+          this.showMonthCalendar()
+          break
+        default:
+          this.showDayCalendar()
+          break
+      }
     },
     showDayCalendar () {
       this.close()
       this.showDayView = true
       this.$emit('opened')
+      document.addEventListener('click', this.clickOutside, false)
     },
     showMonthCalendar () {
       this.close()
       this.showMonthView = true
+      document.addEventListener('click', this.clickOutside, false)
     },
     showYearCalendar () {
       this.close()
       this.showYearView = true
+      document.addEventListener('click', this.clickOutside, false)
     },
 
     setDate (timestamp) {
@@ -352,7 +381,7 @@ export default {
         return false
       }
       this.setDate(day.timestamp)
-      if (this.isInline()) {
+      if (this.isInline) {
         return this.showDayCalendar()
       }
       this.close()
@@ -721,23 +750,28 @@ export default {
       this.currDate = new Date(date.getFullYear(), date.getMonth(), 1).getTime()
     },
 
+    /**
+     * Close the calendar if clicked outside the datepicker
+     * @param  {Event} event
+     */
+    clickOutside (event) {
+      if (this.$el && !this.$el.contains(event.target)) {
+        if (this.isInline) {
+          return this.showDayCalendar()
+        }
+        this.resetDefaultDate()
+        this.close()
+        document.removeEventListener('click', this.clickOutside, false)
+      }
+    },
+
     init () {
       if (this.value) {
         this.setValue(this.value)
       }
-      if (this.isInline()) {
+      if (this.isInline) {
         this.showDayCalendar()
       }
-
-      document.addEventListener('click', (e) => {
-        if (this.$el && !this.$el.contains(e.target)) {
-          if (this.isInline()) {
-            return this.showDayCalendar()
-          }
-          this.resetDefaultDate()
-          this.close()
-        }
-      }, false)
     },
     updateDate (event) {
       if (event.target.value.length >= this.format.length) {
