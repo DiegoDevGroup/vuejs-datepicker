@@ -79,6 +79,7 @@ Inline always open version
 | initial-view          | String       | 'day'       | If 'month' or 'year', open on that view  |
 | disabled-picker       | Boolean      | false       | If true, disable Datepicker on screen    |
 | required              | Boolean      | false       | Sets html required attribute on input    | 
+| allow-input           | Boolean      | false       | Allow keyboard input of standard date formats |
 
 ## Events
 

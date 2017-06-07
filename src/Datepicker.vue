@@ -8,12 +8,13 @@
         :name="name"
         :id="id"
         @click="showCalendar"
+        @keyup="updateDate"
         :value="formattedValue"
         :placeholder="placeholder"
         :clear-button="clearButton"
         :disabled="disabledPicker"
         :required="required"
-        readonly>
+        :readonly="allowInput ? null : 'readonly'">
       <span class="vdp-datepicker__clear-button" :class="{'input-group-addon' : bootstrapStyling}" v-if="clearButton && selectedDate" @click="clearDate()"><i :class="clearButtonIcon"><span v-if="calendarButtonIcon.length === 0">&times;</span></i></span>
     </div>
 
@@ -128,6 +129,10 @@ export default {
     clearButton: {
       type: Boolean,
       default: false
+    },
+    allowInput: {
+      type: Boolean,
+      default: true
     },
     clearButtonIcon: {
       type: String,
@@ -766,6 +771,15 @@ export default {
       }
       if (this.isInline) {
         this.showDayCalendar()
+      }
+    },
+    updateDate (event) {
+      if (event.target.value.length >= this.format.length) {
+        let input = new Date(event.target.value)
+        if (!isNaN(input.valueOf())) {
+          this.setDate(DateUtils.convertToUTC(input))
+          this.close()
+        }
       }
     }
   },
